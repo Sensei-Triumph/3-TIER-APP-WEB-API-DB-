@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 520px; margin: 3rem auto; padding: 0 1rem; }
+  form { display: flex; gap: .5rem; }
+  input { flex: 1; padding: .5rem; }
+  button { padding: .5rem 1rem; }
+  li { padding: .4rem 0; border-bottom: 1px solid #ddd; }
+  small { color: #777; }
+</style>
+</head>
+<body>
+  <h1>Notes</h1>
+  <p id="status" aria-live="polite"></p>
+  <form id="f"><input id="t" placeholder="Write a note…" required><button>Add</button></form>
+  <ul id="list"></ul>
+<script>
+const list = document.getElementById("list");
+const status = document.getElementById("status");
+function setStatus(message, isError = false) {
+  status.textContent = message;
+  status.style.color = isError ? "#b00020" : "#2d6a4f";
+}
+async function load() {
+  try {
+    const response = await fetch("/api/notes");
+    if (!response.ok) {
+      throw new Error("Unable to load notes");
+    }
+    const notes = await response.json();
+    list.innerHTML = "";
+    for (const n of notes) {
+      const li = document.createElement("li");
+      li.textContent = n.text + " ";
+      const s = document.createElement("small");
+      s.textContent = new Date(n.created_at).toLocaleString();
+      li.appendChild(s);
+      list.appendChild(li);
+    }
+    if (!notes.length) {
+      setStatus("No notes yet.");
+    }
+  } catch (error) {
+    setStatus("Could not load notes right now.", true);
+    console.error(error);
+  }
+}
+document.getElementById("f").addEventListener("submit", async e => {
+  e.preventDefault();
+  const t = document.getElementById("t");
+  try {
+    const response = await fetch("/api/notes", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ text: t.value }) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "Unable to save note");
+    }
+    t.value = "";
+    setStatus("Note saved.");
+    await load();
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+});
+load();
+</script>
+</body>
+</html>

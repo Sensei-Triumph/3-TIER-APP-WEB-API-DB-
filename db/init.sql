@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS notes (
+  id SERIAL PRIMARY KEY,
+  text TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO notes (text) VALUES ('Hello, Dev Community!');
